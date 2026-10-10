@@ -98,11 +98,10 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_text("pong")
-    except WebSocketDisconnect:
-        active_websockets.remove(websocket)
+    except (WebSocketDisconnect, ConnectionResetError, OSError):
+        active_websockets.discard(websocket)
     except Exception:
-        if websocket in active_websockets:
-            active_websockets.remove(websocket)
+        active_websockets.discard(websocket)
 
 async def broadcast_ws(payload: dict):
     if not active_websockets:
