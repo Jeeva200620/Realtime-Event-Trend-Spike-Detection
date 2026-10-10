@@ -1,0 +1,99 @@
+system:
+  name: "Early-Warning Event & Trend Spike Detection Radar"
+  version: "1.0.0"
+  regions:
+    - "India"
+    - "USA"
+  tick_interval_seconds: 1.0
+
+detection:
+  micro_window_seconds: 60      # Window for Track 1 physical / eyewitness chatter
+  macro_window_seconds: 300     # Window for Track 2 institutional events
+  min_volume_threshold: 4       # Minimum distinct mentions required before Z-score test
+  z_score_threshold: 3.5        # Anomaly threshold (3.5 sigma)
+  cooldown_seconds: 180         # Prevents repeating the exact same event spike
+
+keywords:
+  # Organic / Physical shock tokens (Track 1)
+  shock_tokens:
+    - "earthquake"
+    - "tremor"
+    - "quaked"
+    - "blast"
+    - "explosion"
+    - "derailment"
+    - "train crash"
+    - "plane crash"
+    - "power outage"
+    - "blackout"
+    - "grid failure"
+    - "mass shooting"
+    - "riot"
+    - "stampede"
+    - "gas leak"
+    - "metro fire"
+    - "tsunami"
+    - "landslide"
+    - "flood surge"
+    - "curfew"
+  
+  # Institutional / Regulatory shock tokens (Track 2)
+  institutional_tokens:
+    - "sebi"
+    - "rbi"
+    - "enforcement directorate"
+    - "sec charge"
+    - "sec investigation"
+    - "doj antitrust"
+    - "ftc injunction"
+    - "insider trading"
+    - "bank fraud"
+    - "forensic audit"
+    - "cbi raid"
+    - "arrested"
+    - "ceo resigns"
+    - "cfo resigns"
+    - "credit default"
+    - "chapter 11"
+    - "insolvency"
+    - "nclt"
+    - "trading halt"
+    - "circuit breaker"
+    - "fined"
+
+  # Regional Geo Entities
+  geo_india:
+    - "delhi"
+    - "mumbai"
+    - "bengaluru"
+    - "bangalore"
+    - "chennai"
+    - "kolkata"
+    - "hyderabad"
+    - "pune"
+    - "gujarat"
+    - "kerala"
+    - "bse"
+    - "nse"
+    - "dalal street"
+    - "nifty"
+    - "sensex"
+  
+  geo_usa:
+    - "new york"
+    - "california"
+    - "los angeles"
+    - "chicago"
+    - "houston"
+    - "washington"
+    - "san francisco"
+    - "wall street"
+    - "nyse"
+    - "nasdaq"
+    - "fed"
+    - "pentagon"
+
+security:
+  max_text_length: 250
+  strip_html: true
+  filter_jailbreak_phrases: true
