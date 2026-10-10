@@ -12,6 +12,18 @@ let alerts = [];
 let streamItems = [];
 let audioCtx = null;
 let isStandaloneMode = false;
+let isFeedPaused = false;
+let isManualPause = false;
+let uiFeedBuffer = [];
+
+function queueUiPost(eventObj, isPriority = false) {
+  if (isPriority) {
+    uiFeedBuffer.unshift(eventObj);
+  } else {
+    uiFeedBuffer.push(eventObj);
+  }
+  if (uiFeedBuffer.length > 80) uiFeedBuffer.pop();
+}
 
 // Telemetry state for standalone client mode
 let standaloneStats = {
@@ -243,9 +255,7 @@ function handleWsMessage(data) {
     renderStream();
     if (data.stats) updateStats(data.stats);
   } else if (data.type === "new_event") {
-    streamItems.unshift(data.event);
-    if (streamItems.length > 80) streamItems.pop();
-    renderStream();
+    queueUiPost(data.event, false);
   } else if (data.type === "spike_alert") {
     alerts.unshift(data.alert);
     if (alerts.length > 40) alerts.pop();
@@ -343,7 +353,7 @@ function processRawPost(text, author) {
       standaloneStats.tokenCounts[t].push(now);
     });
 
-    // Push to live stream UI
+    // High-priority shock post: queue into visual buffer with priority
     const eventObj = {
       track: "organic",
       source: "Bluesky Public",
@@ -352,12 +362,9 @@ function processRawPost(text, author) {
       timestamp: Math.floor(now / 1000),
       matched_tokens: matched
     };
-
-    streamItems.unshift(eventObj);
-    if (streamItems.length > 80) streamItems.pop();
-    renderStream();
-  } else if (Math.random() < 0.04) {
-    // Sample a small slice of raw general posts for velocity texture
+    queueUiPost(eventObj, true);
+  } else if (Math.random() < 0.03) {
+    // Sample a small slice for background activity texture
     const eventObj = {
       track: "organic",
       source: "Bluesky Public",
@@ -366,9 +373,7 @@ function processRawPost(text, author) {
       timestamp: Math.floor(now / 1000),
       matched_tokens: []
     };
-    streamItems.unshift(eventObj);
-    if (streamItems.length > 80) streamItems.pop();
-    renderStream();
+    queueUiPost(eventObj, false);
   }
 }
 
@@ -379,17 +384,14 @@ function ingestPeriodicInstitutional() {
   standaloneStats.totalIngested++;
   standaloneStats.recentTimestamps.push(Date.now());
 
-  streamItems.unshift({
+  queueUiPost({
     track: "institutional",
     source: item.source,
     region: item.region,
     text: item.text,
     timestamp: now,
     matched_tokens: ["REGULATORY", item.region.toUpperCase()]
-  });
-
-  if (streamItems.length > 80) streamItems.pop();
-  renderStream();
+  }, true);
 }
 
 function updateStandaloneTelemetry() {
@@ -594,6 +596,54 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
     btn.classList.remove("active-sound");
   }
 });
+
+// Visual Smooth Throttle: Smoothly release 1 post every 1.5 seconds so humans can comfortably read
+setInterval(() => {
+  if (isFeedPaused) return;
+  if (uiFeedBuffer.length > 0) {
+    const nextItem = uiFeedBuffer.shift();
+    streamItems.unshift(nextItem);
+    if (streamItems.length > 80) streamItems.pop();
+    renderStream();
+  }
+}, 1500);
+
+// Auto-Pause on Hover
+const streamFeedEl = document.getElementById("stream-feed");
+if (streamFeedEl) {
+  streamFeedEl.addEventListener("mouseenter", () => {
+    isFeedPaused = true;
+    updatePauseBtnUI();
+  });
+  streamFeedEl.addEventListener("mouseleave", () => {
+    if (!isManualPause) {
+      isFeedPaused = false;
+      updatePauseBtnUI();
+    }
+  });
+}
+
+// Manual Pause / Resume Button
+const pauseBtn = document.getElementById("feed-pause-btn");
+if (pauseBtn) {
+  pauseBtn.addEventListener("click", () => {
+    isManualPause = !isManualPause;
+    isFeedPaused = isManualPause;
+    updatePauseBtnUI();
+  });
+}
+
+function updatePauseBtnUI() {
+  const btn = document.getElementById("feed-pause-btn");
+  if (!btn) return;
+  if (isFeedPaused) {
+    btn.innerHTML = "▶️ Resume (Paused)";
+    btn.classList.add("is-paused");
+  } else {
+    btn.innerHTML = "⏸️ Pause";
+    btn.classList.remove("is-paused");
+  }
+}
 
 // Live UTC Clock & Alert Relative Time Ticker
 setInterval(() => {
