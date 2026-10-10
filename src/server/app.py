@@ -42,6 +42,14 @@ async def serve_dashboard():
     index_file = DASHBOARD_DIR / "index.html"
     return FileResponse(index_file)
 
+@app.get("/styles.css")
+async def serve_styles():
+    return FileResponse(DASHBOARD_DIR / "styles.css")
+
+@app.get("/app.js")
+async def serve_script():
+    return FileResponse(DASHBOARD_DIR / "app.js")
+
 @app.get("/api/status")
 async def get_status():
     return {
