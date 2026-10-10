@@ -4,6 +4,7 @@
 !.env.example
 *.key
 *.token
+PLAN.md
 
 # Python Virtual Environments & Packages
 venv/
