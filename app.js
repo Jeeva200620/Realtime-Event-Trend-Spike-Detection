@@ -467,6 +467,8 @@ function renderAlerts() {
     return true;
   });
 
+  document.getElementById("stat-alerts").textContent = filtered.length;
+
   if (filtered.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
@@ -593,10 +595,13 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
   }
 });
 
-// Live UTC Clock
+// Live UTC Clock & Alert Relative Time Ticker
 setInterval(() => {
   const now = new Date();
   document.getElementById("live-clock").textContent = now.toUTCString().split(" ")[4] + " UTC";
+  if (alerts.length > 0) {
+    renderAlerts();
+  }
 }, 1000);
 
 // Initialize

@@ -32,23 +32,21 @@ recent_events_cache: List[dict] = []
 active_websockets: Set[WebSocket] = set()
 
 # Background consumer tasks
-consumer_tasks = []
-
-DASHBOARD_DIR = Path(__file__).parent.parent / "dashboard"
-app.mount("/static", StaticFiles(directory=str(DASHBOARD_DIR)), name="static")
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+app.mount("/static", StaticFiles(directory=str(ROOT_DIR)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
-    index_file = DASHBOARD_DIR / "index.html"
+    index_file = ROOT_DIR / "index.html"
     return FileResponse(index_file)
 
 @app.get("/styles.css")
 async def serve_styles():
-    return FileResponse(DASHBOARD_DIR / "styles.css")
+    return FileResponse(ROOT_DIR / "styles.css")
 
 @app.get("/app.js")
 async def serve_script():
-    return FileResponse(DASHBOARD_DIR / "app.js")
+    return FileResponse(ROOT_DIR / "app.js")
 
 @app.get("/api/status")
 async def get_status():
@@ -99,6 +97,7 @@ async def websocket_endpoint(websocket: WebSocket):
             "stats": {
                 "total_ingested": detector.total_ingested,
                 "posts_per_second": detector.posts_per_second,
+                "active_alerts": len(verified_alerts),
             }
         })
         while True:
